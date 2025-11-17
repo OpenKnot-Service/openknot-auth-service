@@ -1,16 +1,57 @@
 package com.openknot.auth.feign.client
 
+import com.openknot.auth.dto.CredentialValidationRequest
 import com.openknot.auth.dto.UserIdResponse
-import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
+import com.openknot.auth.exception.BusinessException
+import com.openknot.auth.exception.ErrorCode
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpStatusCode
+import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
+import reactor.core.publisher.Mono
 
-@FeignClient(
-    name = "user-service",
-    url = "\${feign.user.url}",
-)
-interface UserClient {
+@Component
+class UserClient(
+    @param:Qualifier("userServiceWebClient") private val webClient: WebClient
+) {
+    private val logger = KotlinLogging.logger {}
 
-    @GetMapping("/user-id")
-    fun getUserId(@RequestParam(value = "email") email: String, @RequestParam(value = "password") password: String): UserIdResponse
+    suspend fun validateCredentials(email: String, password: String): UserIdResponse {
+        return try {
+            webClient.post()
+                .uri("/api/validate-credentials")
+                .bodyValue(CredentialValidationRequest(email, password))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError) { response ->
+                    handleClientError(response.statusCode())
+                }
+                .onStatus(HttpStatusCode::is5xxServerError) { response ->
+                    handleServerError(response.statusCode())
+                }
+                .awaitBody<UserIdResponse>()
+        } catch (e: BusinessException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Unexpected error calling user service for email: $email" }
+            throw BusinessException(ErrorCode.INVALID_ERROR_CODE)
+        }
+    }
+
+    private fun handleClientError(statusCode: HttpStatusCode): Mono<Throwable> {
+        return when (statusCode.value()) {
+            404 -> Mono.error(BusinessException(ErrorCode.USER_NOT_FOUND))
+            401 -> Mono.error(BusinessException(ErrorCode.INVALID_PASSWORD))
+            else -> {
+                logger.error { "Client error from user service: ${statusCode.value()}" }
+                Mono.error(BusinessException(ErrorCode.INVALID_ERROR_CODE))
+            }
+        }
+    }
+
+    private fun handleServerError(statusCode: HttpStatusCode): Mono<Throwable> {
+        logger.error { "Server error from user service: ${statusCode.value()}" }
+        return Mono.error(BusinessException(ErrorCode.INVALID_ERROR_CODE))
+    }
 }

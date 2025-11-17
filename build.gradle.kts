@@ -19,8 +19,6 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2025.0.0"
-
 configurations {
     all {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-logging")
@@ -40,6 +38,8 @@ dependencies {
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.7")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.7")
@@ -48,19 +48,11 @@ dependencies {
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
-
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
-
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
-    }
 }
 
 kotlin {

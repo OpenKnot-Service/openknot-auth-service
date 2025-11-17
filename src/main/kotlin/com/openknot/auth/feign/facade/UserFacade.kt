@@ -1,9 +1,7 @@
 package com.openknot.auth.feign.facade
 
-import com.openknot.auth.exception.BusinessException
-import com.openknot.auth.exception.ErrorCode
 import com.openknot.auth.feign.client.UserClient
-import feign.FeignException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -11,18 +9,10 @@ import java.util.UUID
 class UserFacade(
     private val userClient: UserClient,
 ) {
+    private val logger = KotlinLogging.logger {}
+
     suspend fun getUserId(email: String, password: String): UUID {
-        return try {
-            userClient.getUserId(email, password).userId
-        } catch (fe: FeignException) {
-            when (fe.status()) {
-                404 -> throw BusinessException(ErrorCode.USER_NOT_FOUND)
-                401 -> throw BusinessException(ErrorCode.INVALID_PASSWORD)
-                else -> {
-                    fe.printStackTrace()
-                    throw BusinessException(ErrorCode.INVALID_ERROR_CODE)
-                }
-            }
-        }
+        val response = userClient.validateCredentials(email, password)
+        return response.userId
     }
 }
