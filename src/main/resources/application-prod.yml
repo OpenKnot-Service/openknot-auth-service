@@ -1,0 +1,34 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: openknot-auth-service
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default: # 공통 설정
+            connect-timeout: 5000    # default : 1000
+            read-timeout: 30000       # default : 60000
+            logger-level: BASIC
+          openFeignClient: # 특정 Feign Client 설정
+            connect-timeout: 1000
+            read-timeout: 20000
+            logger-level: FULL
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 1800000
+  refresh-token-expiration: 604800000
+
+feign:
+  user:
+    url: http://localhost:8082
