@@ -1,9 +1,6 @@
 package com.openknot.auth.entity
 
-import java.util.UUID
-
 data class RefreshToken(
-    val userId: UUID,
+    val userId: String,
     val token: String,
-    val expiryTime: Long,
 )
