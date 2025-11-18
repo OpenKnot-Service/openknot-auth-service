@@ -10,6 +10,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -51,5 +52,15 @@ class AuthController(
                 accessToken = refreshedToken.accessToken,
             )
         )
+    }
+
+    @PostMapping("/logout")
+    suspend fun logout(
+        @CookieValue("refreshToken", required = true) refreshToken: String,
+        response: ServerHttpResponse,
+    ): ResponseEntity<Unit> {
+        authService.logout(refreshToken)
+        refreshTokenCookieWriter.clear(response)
+        return ResponseEntity.noContent().build()
     }
 }

@@ -25,4 +25,16 @@ class RefreshTokenCookieWriter(
 
         response.addCookie(cookie)
     }
+
+    fun clear(response: ServerHttpResponse) {
+        val expiredCookie = ResponseCookie.from("refreshToken", "")
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Strict")
+            .maxAge(Duration.ZERO)
+            .path("/")
+            .build()
+
+        response.addCookie(expiredCookie)
+    }
 }

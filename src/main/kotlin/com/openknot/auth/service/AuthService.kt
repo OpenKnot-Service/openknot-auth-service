@@ -64,6 +64,18 @@ class AuthService(
         return generatedToken
     }
 
+    suspend fun logout(refreshToken: String) {
+        val token = refreshTokenRepository.findByToken(refreshToken)
+            ?: throw BusinessException(ErrorCode.TOKEN_INVALID)
+
+        val userId = jwtProvider.getAuthentication(token.token)
+            ?: throw BusinessException(ErrorCode.TOKEN_INVALID)
+
+        if (userId != token.userId) throw BusinessException(ErrorCode.TOKEN_INVALID)
+
+        deleteToken(token)
+    }
+
     private suspend fun deleteToken(token: RefreshToken) {
         refreshTokenRepository.deleteToken("refresh_token:${token.token}")
         refreshTokenRepository.deleteToken("user_refresh_token:${token.userId}")
