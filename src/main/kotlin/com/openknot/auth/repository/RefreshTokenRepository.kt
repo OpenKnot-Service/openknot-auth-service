@@ -35,14 +35,17 @@ class RefreshTokenRepository(
     //  수정 예시:
     //    coroutineRedisRepository.save(refreshTokenCacheKey, refreshToken, ttl)
     //    coroutineRedisRepository.save(userIdCacheKey, refreshToken.token, ttl)
-    suspend fun saveToken(refreshToken: RefreshToken) {
-        val refreshTokenCacheKey = "refresh_token:${refreshToken.token}"
-        val userIdCacheKey = "user_refresh_token:${refreshToken.userId}"
+    suspend fun saveToken(
+        userId: String,
+        refreshToken: String
+    ) {
+        val refreshTokenCacheKey = "refresh_token:${refreshToken}"
+        val userIdCacheKey = "user_refresh_token:${userId}"
 
         val ttl = Duration.ofMillis(tokenProperties.refreshTokenExpiration)
         val token = RefreshToken(
-            userId = refreshToken.userId,
-            token = refreshToken.token,
+            userId = userId,
+            token = refreshToken,
         )
 
         coroutineRedisRepository.save(refreshTokenCacheKey, token, ttl)

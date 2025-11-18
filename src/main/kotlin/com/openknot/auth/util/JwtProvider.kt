@@ -29,6 +29,15 @@ class JwtProvider(
         )
     }
 
+    // NOTE: Gateway의 로직과 동일함, 이후 수정할 경우 Gateway도 변경할 것.
+    //          (Gateway Node의 API를 사용하려 하였으나, Gateway 트래픽 분산용으로 그냥 여기 만듬)
+    fun getAuthentication(token: String): String? {
+        val claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).payload
+        val userId = claims.subject
+
+        return userId
+    }
+
     private fun createAccessToken(userId: UUID, role: String, now: Date): String {
         val validity = Date(now.time + tokenProperties.accessTokenExpiration)
         return Jwts.builder()
