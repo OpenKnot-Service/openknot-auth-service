@@ -1,10 +1,13 @@
 package com.openknot.auth.controller
 
+import com.openknot.auth.dto.AccessTokenResponse
 import com.openknot.auth.dto.LoginRequest
-import com.openknot.auth.dto.Token
 import com.openknot.auth.service.AuthService
+import com.openknot.auth.util.RefreshTokenCookieWriter
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.http.server.reactive.ServerHttpResponse
+import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -12,16 +15,40 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class AuthController(
     private val authService: AuthService,
+    private val refreshTokenCookieWriter: RefreshTokenCookieWriter,
 ) {
 
     @PostMapping("/login")
     suspend fun login(
         @RequestBody @Valid request: LoginRequest,
-    ): ResponseEntity<Token> {
+        response: ServerHttpResponse,
+    ): ResponseEntity<AccessTokenResponse> {
+        val generatedToken = authService.login(
+            id = request.email,
+            password = request.password
+        )
+
+        refreshTokenCookieWriter.write(response, generatedToken.refreshToken)
         return ResponseEntity.ok(
-            authService.login(
-                id = request.email,
-                password = request.password
+            AccessTokenResponse(
+                grantType = generatedToken.grantType,
+                accessToken = generatedToken.accessToken,
+            )
+        )
+    }
+
+    @PostMapping("/refresh")
+    suspend fun refresh(
+        @CookieValue("refreshToken", required = true) token: String,
+        response: ServerHttpResponse,
+    ): ResponseEntity<AccessTokenResponse> {
+        val refreshedToken = authService.refresh(token)
+
+        refreshTokenCookieWriter.write(response, refreshedToken.refreshToken)
+        return ResponseEntity.ok(
+            AccessTokenResponse(
+                grantType = refreshedToken.grantType,
+                accessToken = refreshedToken.accessToken,
             )
         )
     }
