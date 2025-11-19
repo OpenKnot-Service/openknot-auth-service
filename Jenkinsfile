@@ -38,6 +38,17 @@ pipeline {
 
                 docker rm -f test-redis || true
                 docker run -d --name test-redis -p 16379:6379 redis:7.2-alpine > /dev/null
+
+                echo "Waiting for Redis to be ready..."
+                for i in {1..30}; do
+                  if docker exec test-redis redis-cli PING > /dev/null 2>&1; then
+                    break
+                  fi
+                  echo "Redis not ready yet... ($i/30)"
+                  sleep 1
+                done
+                docker exec test-redis redis-cli PING
+
                 trap "docker rm -f test-redis || true" EXIT
 
                 export IT_REDIS_HOST=127.0.0.1
