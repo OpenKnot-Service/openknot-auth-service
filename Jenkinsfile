@@ -7,10 +7,6 @@ pipeline {
         CONTAINER_NAME = "openknot-auth-service"
         APP_PORT = "8081"
 
-        // Test Redis settings
-        TEST_REDIS_CONTAINER = "test-redis"
-        TEST_REDIS_PORT = "16379"
-
         // Spring settings
         SPRING_PROFILES_ACTIVE = "prod"
     }
@@ -26,175 +22,112 @@ pipeline {
 
         stage('Setup JDK') {
             steps {
-                script {
-                    sh '''#!/bin/bash -e
-                        if [ ! -d "$PWD/.jdk-temurin-21" ]; then
-                            echo "📥 Downloading Temurin JDK 21..."
-                            curl -sL -o /tmp/temurin21.tar.gz \
-                                https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.6_7.tar.gz
-                            mkdir -p "$PWD/.jdk-temurin-21"
-                            tar -xzf /tmp/temurin21.tar.gz -C "$PWD/.jdk-temurin-21" --strip-components=1
-                            rm /tmp/temurin21.tar.gz
-                            echo "✅ JDK 21 installed"
-                        else
-                            echo "✅ JDK 21 already exists"
-                        fi
-                    '''
-                }
-            }
-        }
-
-        stage('Setup Test Redis') {
-            steps {
-                script {
-                    sh """#!/bin/bash -e
-                        echo "🔧 Setting up test Redis container..."
-
-                        # Clean up existing container
-                        docker rm -f ${TEST_REDIS_CONTAINER} 2>/dev/null || true
-
-                        # Start Redis container
-                        docker run -d \
-                            --name ${TEST_REDIS_CONTAINER} \
-                            -p ${TEST_REDIS_PORT}:6379 \
-                            redis:7.2-alpine
-
-                        # Wait for Redis to be ready
-                        echo "⏳ Waiting for Redis to be ready..."
-                        for i in {1..30}; do
-                            if docker exec ${TEST_REDIS_CONTAINER} redis-cli PING > /dev/null 2>&1; then
-                                echo "✅ Redis is ready"
-                                docker exec ${TEST_REDIS_CONTAINER} redis-cli PING
-                                break
-                            fi
-                            echo "   Attempt \$i/30..."
-                            sleep 1
-                        done
-
-                        # Get Docker host IP (gateway for bridge network)
-                        DOCKER_HOST_IP=\$(docker network inspect bridge --format='{{(index .IPAM.Config 0).Gateway}}')
-                        echo "📍 Docker host IP: \${DOCKER_HOST_IP}"
-
-                        # Export for tests
-                        echo "DOCKER_HOST_IP=\${DOCKER_HOST_IP}" > .docker-host-ip
-                    """
-                }
+                sh '''#!/bin/bash -e
+                    if [ ! -d "$PWD/.jdk-temurin-21" ]; then
+                        echo "📥 Downloading Temurin JDK 21..."
+                        curl -sL -o /tmp/temurin21.tar.gz \
+                            https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.6_7.tar.gz
+                        mkdir -p "$PWD/.jdk-temurin-21"
+                        tar -xzf /tmp/temurin21.tar.gz -C "$PWD/.jdk-temurin-21" --strip-components=1
+                        rm /tmp/temurin21.tar.gz
+                        echo "✅ JDK 21 installed"
+                    else
+                        echo "✅ JDK 21 already exists"
+                    fi
+                '''
             }
         }
 
         stage('Build & Test') {
             steps {
-                script {
-                    sh """#!/bin/bash -e
-                        export JAVA_HOME="\$PWD/.jdk-temurin-21"
-                        export PATH="\$JAVA_HOME/bin:\$PATH"
+                sh '''#!/bin/bash -e
+                    export JAVA_HOME="$PWD/.jdk-temurin-21"
+                    export PATH="$JAVA_HOME/bin:$PATH"
 
-                        # Load Docker host IP
-                        source .docker-host-ip
+                    echo "🏗️  Building and testing..."
+                    echo "📦 Testcontainers will automatically manage Redis for tests"
 
-                        # Configure test to use external Redis (Jenkins environment)
-                        export IT_REDIS_HOST=\${DOCKER_HOST_IP}
-                        export IT_REDIS_PORT=${TEST_REDIS_PORT}
+                    chmod +x gradlew
+                    ./gradlew clean test bootJar
 
-                        echo "📍 Connecting to Redis at \${IT_REDIS_HOST}:\${IT_REDIS_PORT}"
-
-                        echo "🏗️  Building and testing..."
-                        chmod +x gradlew
-                        ./gradlew clean test bootJar
-
-                        echo "✅ Build and tests completed"
-                    """
-                }
-            }
-            post {
-                always {
-                    sh "docker rm -f ${TEST_REDIS_CONTAINER} || true"
-                }
+                    echo "✅ Build and tests completed"
+                '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh """
-                        echo "🐳 Building Docker image..."
-                        docker build \
-                            -t ${IMAGE_NAME}:${BUILD_NUMBER} \
-                            -t ${IMAGE_NAME}:latest \
-                            .
-                        echo "✅ Docker image built"
-                    """
-                }
+                sh """
+                    echo "🐳 Building Docker image..."
+                    docker build \
+                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                    echo "✅ Docker image built"
+                """
             }
         }
 
         stage('Deploy') {
             steps {
-                script {
-                    // Use withCredentials to securely pass secrets
-                    withCredentials([
-                        string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST_VAR'),
-                        string(credentialsId: 'REDIS_PASSWORD', variable: 'REDIS_PASSWORD_VAR'),
-                        string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET_VAR')
-                    ]) {
-                        sh '''#!/bin/bash -e
-                            echo "🚀 Deploying application..."
+                withCredentials([
+                    string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST_VAR'),
+                    string(credentialsId: 'REDIS_PASSWORD', variable: 'REDIS_PASSWORD_VAR'),
+                    string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET_VAR')
+                ]) {
+                    sh '''#!/bin/bash -e
+                        echo "🚀 Deploying application..."
 
-                            # Force stop and remove existing container
-                            if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-                                echo "Stopping existing container..."
-                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                                docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+                        # Stop and remove existing container
+                        if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+                            echo "   Stopping existing container..."
+                            docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                            docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+                        fi
+
+                        # Wait for port to be released
+                        echo "⏳ Waiting for port ${APP_PORT} to be released..."
+                        for i in {1..30}; do
+                            if ! docker ps --format '{{.Ports}}' | grep -q ":${APP_PORT}->"; then
+                                echo "✅ Port ${APP_PORT} is available"
+                                break
                             fi
+                            sleep 1
+                        done
 
-                            # Wait for port to be released
-                            echo "⏳ Waiting for port ${APP_PORT} to be released..."
-                            for i in {1..30}; do
-                                if ! docker ps --format '{{.Ports}}' | grep -q ":${APP_PORT}->"; then
-                                    echo "✅ Port ${APP_PORT} is available"
-                                    break
-                                fi
-                                echo "   Waiting... ($i/30)"
-                                sleep 1
-                            done
+                        # Run new container
+                        echo "📦 Starting new container..."
+                        docker run -d \
+                            --name ${CONTAINER_NAME} \
+                            -p ${APP_PORT}:${APP_PORT} \
+                            -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
+                            -e REDIS_HOST="${REDIS_HOST_VAR}" \
+                            -e REDIS_PASSWORD="${REDIS_PASSWORD_VAR}" \
+                            -e JWT_SECRET="${JWT_SECRET_VAR}" \
+                            --restart unless-stopped \
+                            ${IMAGE_NAME}:latest
 
-                            # Run new container with secrets passed as environment variables
-                            echo "Starting new container..."
-                            docker run -d \
-                                --name ${CONTAINER_NAME} \
-                                -p ${APP_PORT}:${APP_PORT} \
-                                -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
-                                -e REDIS_HOST="${REDIS_HOST_VAR}" \
-                                -e REDIS_PASSWORD="${REDIS_PASSWORD_VAR}" \
-                                -e JWT_SECRET="${JWT_SECRET_VAR}" \
-                                --restart unless-stopped \
-                                ${IMAGE_NAME}:latest
+                        echo "✅ Application deployed"
 
-                            echo "✅ Application deployed"
+                        # Health check
+                        echo "🏥 Checking application health..."
+                        sleep 5
 
-                            # Health check
-                            echo "🏥 Waiting for application to be healthy..."
-                            sleep 5
-
-                            if docker ps | grep -q ${CONTAINER_NAME}; then
-                                echo "✅ Container is running"
-                                docker logs --tail 20 ${CONTAINER_NAME}
-                            else
-                                echo "❌ Container failed to start"
-                                docker logs ${CONTAINER_NAME}
-                                exit 1
-                            fi
-                        '''
-                    }
+                        if docker ps | grep -q ${CONTAINER_NAME}; then
+                            echo "✅ Container is running"
+                            docker logs --tail 20 ${CONTAINER_NAME}
+                        else
+                            echo "❌ Container failed to start"
+                            docker logs ${CONTAINER_NAME}
+                            exit 1
+                        fi
+                    '''
                 }
             }
         }
     }
 
     post {
-        always {
-            sh "docker rm -f ${TEST_REDIS_CONTAINER} 2>/dev/null || true"
-        }
         failure {
             echo "❌ 빌드/배포 실패! 로그를 확인하세요."
         }
