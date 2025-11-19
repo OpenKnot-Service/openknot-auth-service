@@ -14,9 +14,25 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    credentialsId: 'GitHub_Token',
-                    url: 'https://github.com/OpenKnot-Service/openknot-auth-service.git'
+                // Clean workspace before checkout
+                cleanWs()
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        credentialsId: 'GitHub_Token',
+                        url: 'https://github.com/OpenKnot-Service/openknot-auth-service.git'
+                    ]],
+                    extensions: [
+                        [$class: 'CleanBeforeCheckout'],
+                        [$class: 'CloneOption', depth: 1, shallow: true]
+                    ]
+                ])
+
+                // Verify we have the latest code
+                sh 'echo "Current commit: $(git rev-parse HEAD)"'
+                sh 'echo "Current branch: $(git branch --show-current)"'
             }
         }
 
