@@ -2,11 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Production credentials
-        REDIS_HOST = credentials('REDIS_HOST')
-        REDIS_PASSWORD = credentials('REDIS_PASSWORD')
-        JWT_SECRET = credentials('JWT_SECRET')
-
         // Docker settings
         IMAGE_NAME = "openknot-auth-service"
         CONTAINER_NAME = "openknot-auth-service"
@@ -127,38 +122,61 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    sh """
-                        echo "🚀 Deploying application..."
+                    // Use withCredentials to securely pass secrets
+                    withCredentials([
+                        string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST_VAR'),
+                        string(credentialsId: 'REDIS_PASSWORD', variable: 'REDIS_PASSWORD_VAR'),
+                        string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET_VAR')
+                    ]) {
+                        sh '''#!/bin/bash -e
+                            echo "🚀 Deploying application..."
 
-                        # Stop and remove existing container
-                        docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                        docker rm ${CONTAINER_NAME} 2>/dev/null || true
+                            # Force stop and remove existing container
+                            if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+                                echo "Stopping existing container..."
+                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                                docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+                            fi
 
-                        # Run new container
-                        docker run -d \
-                            --name ${CONTAINER_NAME} \
-                            -p ${APP_PORT}:${APP_PORT} \
-                            -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
-                            -e REDIS_HOST=${REDIS_HOST} \
-                            -e REDIS_PASSWORD=${REDIS_PASSWORD} \
-                            -e JWT_SECRET=${JWT_SECRET} \
-                            --restart unless-stopped \
-                            ${IMAGE_NAME}:latest
+                            # Wait for port to be released
+                            echo "⏳ Waiting for port ${APP_PORT} to be released..."
+                            for i in {1..30}; do
+                                if ! docker ps --format '{{.Ports}}' | grep -q ":${APP_PORT}->"; then
+                                    echo "✅ Port ${APP_PORT} is available"
+                                    break
+                                fi
+                                echo "   Waiting... ($i/30)"
+                                sleep 1
+                            done
 
-                        echo "✅ Application deployed"
+                            # Run new container with secrets passed as environment variables
+                            echo "Starting new container..."
+                            docker run -d \
+                                --name ${CONTAINER_NAME} \
+                                -p ${APP_PORT}:${APP_PORT} \
+                                -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
+                                -e REDIS_HOST="${REDIS_HOST_VAR}" \
+                                -e REDIS_PASSWORD="${REDIS_PASSWORD_VAR}" \
+                                -e JWT_SECRET="${JWT_SECRET_VAR}" \
+                                --restart unless-stopped \
+                                ${IMAGE_NAME}:latest
 
-                        # Health check
-                        echo "🏥 Waiting for application to be healthy..."
-                        sleep 5
+                            echo "✅ Application deployed"
 
-                        if docker ps | grep -q ${CONTAINER_NAME}; then
-                            echo "✅ Container is running"
-                        else
-                            echo "❌ Container failed to start"
-                            docker logs ${CONTAINER_NAME}
-                            exit 1
-                        fi
-                    """
+                            # Health check
+                            echo "🏥 Waiting for application to be healthy..."
+                            sleep 5
+
+                            if docker ps | grep -q ${CONTAINER_NAME}; then
+                                echo "✅ Container is running"
+                                docker logs --tail 20 ${CONTAINER_NAME}
+                            else
+                                echo "❌ Container failed to start"
+                                docker logs ${CONTAINER_NAME}
+                                exit 1
+                            fi
+                        '''
+                    }
                 }
             }
         }
