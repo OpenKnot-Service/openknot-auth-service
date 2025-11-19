@@ -1,9 +1,12 @@
 package com.openknot.auth.integration
 
+import com.openknot.auth.dto.Token
 import com.openknot.auth.feign.facade.UserFacade
 import com.openknot.auth.repository.RefreshTokenRepository
+import com.openknot.auth.util.JwtProvider
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
+import io.mockk.every
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,13 +29,19 @@ class AuthIntegrationTest {
     @MockkBean
     lateinit var refreshTokenRepository: RefreshTokenRepository
 
+    @MockkBean
+    lateinit var jwtProvider: JwtProvider
+
     @Test
     fun `로그인 성공 시 Access Token과 Refresh Token을 발급한다`() {
         // Given
         val userId = UUID.randomUUID()
+        val mockToken = Token(grantType = "Bearer", accessToken = "test-access-token", refreshToken = "test-refresh-token")
+
         coEvery { userFacade.getUserId("test@example.com", "password123") } returns userId
         coEvery { refreshTokenRepository.findByUserId(userId.toString()) } returns null
         coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
+        every { jwtProvider.generateTokens(userId, "ROLE_USER") } returns mockToken
 
         // When & Then
         val response = webTestClient.post()
@@ -49,13 +58,13 @@ class AuthIntegrationTest {
             .exchange()
             .expectStatus().isOk
             .expectBody()
-            .jsonPath("$.accessToken").isNotEmpty
+            .jsonPath("$.accessToken").isEqualTo("test-access-token")
             .returnResult()
 
         val refreshCookie = response.responseCookies["refreshToken"]
         assertThat(refreshCookie).isNotNull
         assertThat(refreshCookie!!).isNotEmpty
-        assertThat(refreshCookie.first().value).isNotBlank
+        assertThat(refreshCookie.first().value).isEqualTo("test-refresh-token")
     }
 
     @Test
