@@ -405,4 +405,3 @@ src/main/resources/application.yml
 
 src/main/resources/messages/messages.yml
 /.claude/
-/src/test/resources/

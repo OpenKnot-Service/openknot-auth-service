@@ -1,0 +1,13 @@
+jwt:
+  secret: V2ludGVyIENsb3VkIEF1dGggU2VydmljZSBKV1QgW2thbmN0aDAzQGdtYWlsLmNvbV0=
+  access-token-expiration: 1800000
+  refresh-token-expiration: 604800000
+
+spring:
+  data:
+    redis:
+      password:
+
+feign:
+  user:
+    url: http://localhost:18082
