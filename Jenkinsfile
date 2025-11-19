@@ -53,18 +53,19 @@ pipeline {
                         # Clean up existing container
                         docker rm -f ${TEST_REDIS_CONTAINER} 2>/dev/null || true
 
-                        # Start Redis container
+                        # Start Redis container with host network mode for Jenkins compatibility
                         docker run -d \
                             --name ${TEST_REDIS_CONTAINER} \
-                            -p ${TEST_REDIS_PORT}:6379 \
-                            redis:7.2-alpine
+                            --network host \
+                            redis:7.2-alpine \
+                            redis-server --port ${TEST_REDIS_PORT}
 
                         # Wait for Redis to be ready
                         echo "⏳ Waiting for Redis to be ready..."
                         for i in {1..30}; do
-                            if docker exec ${TEST_REDIS_CONTAINER} redis-cli PING > /dev/null 2>&1; then
+                            if docker exec ${TEST_REDIS_CONTAINER} redis-cli -p ${TEST_REDIS_PORT} PING > /dev/null 2>&1; then
                                 echo "✅ Redis is ready"
-                                docker exec ${TEST_REDIS_CONTAINER} redis-cli PING
+                                docker exec ${TEST_REDIS_CONTAINER} redis-cli -p ${TEST_REDIS_PORT} PING
                                 exit 0
                             fi
                             echo "   Attempt \$i/30..."
