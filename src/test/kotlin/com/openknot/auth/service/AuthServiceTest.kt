@@ -35,8 +35,8 @@ class AuthServiceTest(
     @Test
     fun `로그인하면 Refresh Token이 저장된다`() = runTest {
         // Given
+        coEvery { refreshTokenRepository.findByUserId(fixedUserId.toString()) } returns null
         coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
-        coEvery { refreshTokenRepository.findByUserId(fixedUserId.toString()) } returns RefreshToken(fixedUserId.toString(), "test-token")
 
         // When
         val token = authService.login("tester@example.com", "password123")
@@ -51,7 +51,7 @@ class AuthServiceTest(
         // Given
         val oldToken = "old-refresh-token"
         coEvery { refreshTokenRepository.findByToken(oldToken) } returns RefreshToken(fixedUserId.toString(), oldToken)
-        coEvery { refreshTokenRepository.deleteToken(oldToken) } returns true
+        coEvery { refreshTokenRepository.deleteToken(any()) } returns true
         coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
 
         // When
@@ -60,7 +60,7 @@ class AuthServiceTest(
         // Then
         assertThat(rotated.refreshToken).isNotBlank
         assertThat(rotated.refreshToken).isNotEqualTo(oldToken)
-        coVerify { refreshTokenRepository.deleteToken(oldToken) }
+        coVerify(exactly = 2) { refreshTokenRepository.deleteToken(any()) }
         coVerify { refreshTokenRepository.saveToken(fixedUserId.toString(), any()) }
     }
 }
