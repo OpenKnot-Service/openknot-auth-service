@@ -85,9 +85,9 @@ pipeline {
                         export JAVA_HOME="\$PWD/.jdk-temurin-21"
                         export PATH="\$JAVA_HOME/bin:\$PATH"
 
-                        # Configure Spring Boot to use test Redis
-                        export SPRING_DATA_REDIS_HOST=localhost
-                        export SPRING_DATA_REDIS_PORT=${TEST_REDIS_PORT}
+                        # Configure test to use external Redis (Jenkins environment)
+                        export IT_REDIS_HOST=localhost
+                        export IT_REDIS_PORT=${TEST_REDIS_PORT}
 
                         echo "🏗️  Building and testing..."
                         chmod +x gradlew
