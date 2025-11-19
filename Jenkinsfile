@@ -53,27 +53,30 @@ pipeline {
                         # Clean up existing container
                         docker rm -f ${TEST_REDIS_CONTAINER} 2>/dev/null || true
 
-                        # Start Redis container with host network mode for Jenkins compatibility
+                        # Start Redis container
                         docker run -d \
                             --name ${TEST_REDIS_CONTAINER} \
-                            --network host \
-                            redis:7.2-alpine \
-                            redis-server --port ${TEST_REDIS_PORT}
+                            -p ${TEST_REDIS_PORT}:6379 \
+                            redis:7.2-alpine
 
                         # Wait for Redis to be ready
                         echo "⏳ Waiting for Redis to be ready..."
                         for i in {1..30}; do
-                            if docker exec ${TEST_REDIS_CONTAINER} redis-cli -p ${TEST_REDIS_PORT} PING > /dev/null 2>&1; then
+                            if docker exec ${TEST_REDIS_CONTAINER} redis-cli PING > /dev/null 2>&1; then
                                 echo "✅ Redis is ready"
-                                docker exec ${TEST_REDIS_CONTAINER} redis-cli -p ${TEST_REDIS_PORT} PING
-                                exit 0
+                                docker exec ${TEST_REDIS_CONTAINER} redis-cli PING
+                                break
                             fi
                             echo "   Attempt \$i/30..."
                             sleep 1
                         done
 
-                        echo "❌ Redis failed to start"
-                        exit 1
+                        # Get Docker host IP (gateway for bridge network)
+                        DOCKER_HOST_IP=\$(docker network inspect bridge --format='{{(index .IPAM.Config 0).Gateway}}')
+                        echo "📍 Docker host IP: \${DOCKER_HOST_IP}"
+
+                        # Export for tests
+                        echo "DOCKER_HOST_IP=\${DOCKER_HOST_IP}" > .docker-host-ip
                     """
                 }
             }
@@ -86,9 +89,14 @@ pipeline {
                         export JAVA_HOME="\$PWD/.jdk-temurin-21"
                         export PATH="\$JAVA_HOME/bin:\$PATH"
 
+                        # Load Docker host IP
+                        source .docker-host-ip
+
                         # Configure test to use external Redis (Jenkins environment)
-                        export IT_REDIS_HOST=localhost
+                        export IT_REDIS_HOST=\${DOCKER_HOST_IP}
                         export IT_REDIS_PORT=${TEST_REDIS_PORT}
+
+                        echo "📍 Connecting to Redis at \${IT_REDIS_HOST}:\${IT_REDIS_PORT}"
 
                         echo "🏗️  Building and testing..."
                         chmod +x gradlew
