@@ -36,6 +36,13 @@ pipeline {
                 export JAVA_HOME="$PWD/.jdk-temurin-21"
                 export PATH="$JAVA_HOME/bin:$PATH"
 
+                docker rm -f test-redis || true
+                docker run -d --name test-redis -p 16379:6379 redis:7.2-alpine > /dev/null
+                trap "docker rm -f test-redis || true" EXIT
+
+                export IT_REDIS_HOST=127.0.0.1
+                export IT_REDIS_PORT=16379
+
                 ./gradlew clean test bootJar
                 '''
             }
