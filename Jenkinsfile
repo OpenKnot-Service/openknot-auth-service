@@ -23,8 +23,21 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh "chmod +x gradlew || true"
-                sh "./gradlew clean test bootJar"
+                sh '''#!/bin/bash -e
+                chmod +x gradlew || true
+
+                if [ ! -d "$PWD/.jdk-temurin-21" ]; then
+                  echo "Downloading Temurin JDK 21..."
+                  curl -L -o /tmp/temurin21.tar.gz https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.6_7.tar.gz
+                  mkdir -p "$PWD/.jdk-temurin-21"
+                  tar -xzf /tmp/temurin21.tar.gz -C "$PWD/.jdk-temurin-21" --strip-components=1
+                fi
+
+                export JAVA_HOME="$PWD/.jdk-temurin-21"
+                export PATH="$JAVA_HOME/bin:$PATH"
+
+                ./gradlew clean test bootJar
+                '''
             }
         }
 
