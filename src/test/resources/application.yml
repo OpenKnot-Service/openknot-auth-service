@@ -1,5 +1,5 @@
 jwt:
-  secret: V2ludGVyIENsb3VkIEF1dGggU2VydmljZSBKV1QgW2thbmN0aDAzQGdtYWlsLmNvbV0=
+  secret: 9KAuqfLP1cpfz/bPJfE254yYC0fugqtB9b/GuABVbXpDq4bzFRmz9qoIaBdiNUHeS0xSNH3QqAFtGcizMnuqFw==
   access-token-expiration: 1800000
   refresh-token-expiration: 604800000
 
