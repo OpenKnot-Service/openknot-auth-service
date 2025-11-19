@@ -1,10 +1,11 @@
 package com.openknot.auth.service
 
+import com.openknot.auth.dto.RefreshToken
 import com.openknot.auth.feign.facade.UserFacade
 import com.openknot.auth.repository.RefreshTokenRepository
-import com.openknot.auth.support.RedisContainerSupport
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
+import io.mockk.coVerify
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -16,11 +17,13 @@ import java.util.UUID
 @SpringBootTest
 class AuthServiceTest(
     @Autowired private val authService: AuthService,
-    @Autowired private val refreshTokenRepository: RefreshTokenRepository,
-) : RedisContainerSupport() {
+) {
 
     @MockkBean
     lateinit var userFacade: UserFacade
+
+    @MockkBean
+    lateinit var refreshTokenRepository: RefreshTokenRepository
 
     private val fixedUserId = UUID.randomUUID()
 
@@ -30,22 +33,34 @@ class AuthServiceTest(
     }
 
     @Test
-    fun `로그인하면 Refresh Token이 Redis에 저장된다`() = runTest {
+    fun `로그인하면 Refresh Token이 저장된다`() = runTest {
+        // Given
+        coEvery { refreshTokenRepository.saveToken(any(), any(), any()) } returns Unit
+        coEvery { refreshTokenRepository.findByUserId(fixedUserId.toString()) } returns RefreshToken("test-token", fixedUserId.toString())
+
+        // When
         val token = authService.login("tester@example.com", "password123")
 
-        val saved = refreshTokenRepository.findByUserId(fixedUserId.toString())
-
-        assertThat(saved).isNotNull
-        assertThat(saved!!.token).isEqualTo(token.refreshToken)
+        // Then
+        assertThat(token.refreshToken).isNotBlank
+        coVerify { refreshTokenRepository.saveToken(any(), fixedUserId.toString(), any()) }
     }
 
     @Test
     fun `Refresh 요청 시 기존 토큰이 삭제되고 새 토큰이 발급된다`() = runTest {
-        val issued = authService.login("tester@example.com", "password123")
+        // Given
+        val oldToken = "old-refresh-token"
+        coEvery { refreshTokenRepository.findByToken(oldToken) } returns RefreshToken(oldToken, fixedUserId.toString())
+        coEvery { refreshTokenRepository.deleteToken(oldToken) } returns Unit
+        coEvery { refreshTokenRepository.saveToken(any(), any(), any()) } returns Unit
 
-        val rotated = authService.refresh(issued.refreshToken)
+        // When
+        val rotated = authService.refresh(oldToken)
 
-        val latest = refreshTokenRepository.findByUserId(fixedUserId.toString())
-        assertThat(latest!!.token).isEqualTo(rotated.refreshToken)
+        // Then
+        assertThat(rotated.refreshToken).isNotBlank
+        assertThat(rotated.refreshToken).isNotEqualTo(oldToken)
+        coVerify { refreshTokenRepository.deleteToken(oldToken) }
+        coVerify { refreshTokenRepository.saveToken(any(), fixedUserId.toString(), any()) }
     }
 }

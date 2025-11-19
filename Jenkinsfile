@@ -61,7 +61,7 @@ pipeline {
                     export PATH="$JAVA_HOME/bin:$PATH"
 
                     echo "🏗️  Building and testing..."
-                    echo "📦 Testcontainers will automatically manage Redis for tests"
+                    echo "📝 Tests use mocked dependencies (no external Redis required)"
 
                     chmod +x gradlew
                     ./gradlew clean test bootJar
