@@ -31,7 +31,7 @@ class AuthIntegrationTest {
         // Given
         val userId = UUID.randomUUID()
         coEvery { userFacade.getUserId("test@example.com", "password123") } returns userId
-        coEvery { refreshTokenRepository.saveToken(any(), any(), any()) } returns Unit
+        coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
 
         // When & Then
         val response = webTestClient.post()

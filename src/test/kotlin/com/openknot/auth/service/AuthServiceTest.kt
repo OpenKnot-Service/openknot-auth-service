@@ -1,6 +1,6 @@
 package com.openknot.auth.service
 
-import com.openknot.auth.dto.RefreshToken
+import com.openknot.auth.entity.RefreshToken
 import com.openknot.auth.feign.facade.UserFacade
 import com.openknot.auth.repository.RefreshTokenRepository
 import com.ninjasquad.springmockk.MockkBean
@@ -35,24 +35,24 @@ class AuthServiceTest(
     @Test
     fun `로그인하면 Refresh Token이 저장된다`() = runTest {
         // Given
-        coEvery { refreshTokenRepository.saveToken(any(), any(), any()) } returns Unit
-        coEvery { refreshTokenRepository.findByUserId(fixedUserId.toString()) } returns RefreshToken("test-token", fixedUserId.toString())
+        coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
+        coEvery { refreshTokenRepository.findByUserId(fixedUserId.toString()) } returns RefreshToken(fixedUserId.toString(), "test-token")
 
         // When
         val token = authService.login("tester@example.com", "password123")
 
         // Then
         assertThat(token.refreshToken).isNotBlank
-        coVerify { refreshTokenRepository.saveToken(any(), fixedUserId.toString(), any()) }
+        coVerify { refreshTokenRepository.saveToken(fixedUserId.toString(), any()) }
     }
 
     @Test
     fun `Refresh 요청 시 기존 토큰이 삭제되고 새 토큰이 발급된다`() = runTest {
         // Given
         val oldToken = "old-refresh-token"
-        coEvery { refreshTokenRepository.findByToken(oldToken) } returns RefreshToken(oldToken, fixedUserId.toString())
-        coEvery { refreshTokenRepository.deleteToken(oldToken) } returns Unit
-        coEvery { refreshTokenRepository.saveToken(any(), any(), any()) } returns Unit
+        coEvery { refreshTokenRepository.findByToken(oldToken) } returns RefreshToken(fixedUserId.toString(), oldToken)
+        coEvery { refreshTokenRepository.deleteToken(oldToken) } returns true
+        coEvery { refreshTokenRepository.saveToken(any(), any()) } returns Unit
 
         // When
         val rotated = authService.refresh(oldToken)
@@ -61,6 +61,6 @@ class AuthServiceTest(
         assertThat(rotated.refreshToken).isNotBlank
         assertThat(rotated.refreshToken).isNotEqualTo(oldToken)
         coVerify { refreshTokenRepository.deleteToken(oldToken) }
-        coVerify { refreshTokenRepository.saveToken(any(), fixedUserId.toString(), any()) }
+        coVerify { refreshTokenRepository.saveToken(fixedUserId.toString(), any()) }
     }
 }
