@@ -31,4 +31,4 @@ jwt:
 
 feign:
   user:
-    url: http://localhost:8082
+    url: http://openknot-user-service:8082
