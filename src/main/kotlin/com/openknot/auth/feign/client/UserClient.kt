@@ -21,7 +21,7 @@ class UserClient(
     suspend fun validateCredentials(email: String, password: String): UserIdResponse {
         return try {
             webClient.post()
-                .uri("/api/validate-credentials")
+                .uri("/validate-credentials")
                 .bodyValue(CredentialValidationRequest(email, password))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError) { response ->
