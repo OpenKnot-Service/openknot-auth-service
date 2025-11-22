@@ -4,6 +4,15 @@ jwt:
   refresh-token-expiration: 604800000
 
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            redirect-uri: https://api.winter-cloud.com/auth/github/callback
+            scope: user
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
