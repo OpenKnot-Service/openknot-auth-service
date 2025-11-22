@@ -20,9 +20,9 @@ enum class ErrorCode(
     TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "로그인 정보가 존재하지 않습니다."),
 
     // User Error
-    ALREADY_EMAIL(HttpStatus.CONFLICT, "USER.001"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER.002"),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "USER.003"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER.001"),
 //    UNSUPPORTED_AUTH_PROVIDER(HttpStatus.BAD_REQUEST, "USER.003"),
 
     // System Error
@@ -36,6 +36,10 @@ enum class ErrorCode(
     DEFAULT_MIN_MESSAGE(HttpStatus.BAD_REQUEST, "VALID.005"),
     DEFAULT_MAX_MESSAGE(HttpStatus.BAD_REQUEST, "VALID.006"),
     DEFAULT_RANGE_MESSAGE(HttpStatus.BAD_REQUEST, "VALID.007"),
+    INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "비밀번호는 8자 이상이며, 대문자, 소문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다."),
+    INVALID_NAME_LENGTH(HttpStatus.BAD_REQUEST, "이름은 2자 이상 50자 이하여야 합니다."),
+    INVALID_URL_FORMAT(HttpStatus.BAD_REQUEST, "올바른 URL 형식이 아닙니다."),
+    INVALID_DESCRIPTION_LENGTH(HttpStatus.BAD_REQUEST, "소개는 500자 이하여야 합니다."),
 
     // For test
     FOO(HttpStatus.INTERNAL_SERVER_ERROR, "FOO.001"),
