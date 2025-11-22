@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        REDIS_HOST = credentials('REDIS_HOST_VAR')
-        REDIS_PASSWORD = credentials('REDIS_PASSWORD_VAR')
-        JWT_SECRET = credentials('JWT_SECRET_VAR')
+        REDIS_HOST = credentials('REDIS_HOST')
+        REDIS_PASSWORD = credentials('REDIS_PASSWORD')
+        JWT_SECRET = credentials('JWT_SECRET')
         GITHUB_CLIENT_ID = credentials('GITHUB_CLIENT_ID')
         GITHUB_CLIENT_SECRET = credentials('GITHUB_CLIENT_SECRET')
         GITHUB_OAUTH_REDIRECT_URI = credentials('GITHUB_OAUTH_REDIRECT_URI')
@@ -125,9 +125,9 @@ pipeline {
                             --network backend \
                             -p ${APP_PORT}:${APP_PORT} \
                             -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
-                            -e REDIS_HOST="${REDIS_HOST_VAR}" \
-                            -e REDIS_PASSWORD="${REDIS_PASSWORD_VAR}" \
-                            -e JWT_SECRET="${JWT_SECRET_VAR}" \
+                            -e REDIS_HOST="${REDIS_HOST}" \
+                            -e REDIS_PASSWORD="${REDIS_PASSWORD}" \
+                            -e JWT_SECRET="${JWT_SECRET}" \
                             -e GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID}" \
                             -e GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET}" \
                             -e GITHUB_OAUTH_REDIRECT_URI="${GITHUB_OAUTH_REDIRECT_URI}" \
