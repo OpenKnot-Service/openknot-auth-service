@@ -2,6 +2,13 @@ pipeline {
     agent any
 
     environment {
+        REDIS_HOST = credentials('REDIS_HOST_VAR')
+        REDIS_PASSWORD = credentials('REDIS_PASSWORD_VAR')
+        JWT_SECRET = credentials('JWT_SECRET_VAR')
+        GITHUB_CLIENT_ID = credentials('GITHUB_CLIENT_ID')
+        GITHUB_CLIENT_SECRET = credentials('GITHUB_CLIENT_SECRET')
+        GITHUB_OAUTH_REDIRECT_URI = credentials('GITHUB_OAUTH_REDIRECT_URI')
+
         // Docker settings
         IMAGE_NAME = "openknot-auth-service"
         CONTAINER_NAME = "openknot-auth-service"
