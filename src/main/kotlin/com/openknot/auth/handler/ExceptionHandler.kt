@@ -4,6 +4,7 @@ import com.openknot.auth.converter.MessageConverter
 import com.openknot.auth.dto.ErrorResponse
 import com.openknot.auth.exception.BusinessException
 import com.openknot.auth.exception.ErrorCode
+import com.openknot.auth.exception.UserServiceException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
@@ -30,6 +31,12 @@ class ExceptionHandler(
         )
         logger.error { "Business Exception: $errorCode" }
         return ResponseEntity.status(errorCode.status).body(body)
+    }
+
+    @ExceptionHandler(UserServiceException::class)
+    fun handleUserServiceException(e: UserServiceException): ResponseEntity<ErrorResponse> {
+        logger.error { "User Service Exception proxied: ${e.errorResponse.code}" }
+        return ResponseEntity.status(e.statusCode).body(e.errorResponse)
     }
 
     @ExceptionHandler(JwtException::class)
