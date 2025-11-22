@@ -121,6 +121,9 @@ pipeline {
                             -e REDIS_HOST="${REDIS_HOST_VAR}" \
                             -e REDIS_PASSWORD="${REDIS_PASSWORD_VAR}" \
                             -e JWT_SECRET="${JWT_SECRET_VAR}" \
+                            -e GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID}" \
+                            -e GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET}" \
+                            -e GITHUB_OAUTH_REDIRECT_URI="${GITHUB_OAUTH_REDIRECT_URI}" \
                             --restart unless-stopped \
                             ${IMAGE_NAME}:latest
 
