@@ -2,6 +2,7 @@ package com.openknot.auth.controller
 
 import com.openknot.auth.dto.AccessTokenResponse
 import com.openknot.auth.dto.LoginRequest
+import com.openknot.auth.dto.RegisterRequest
 import com.openknot.auth.service.AuthService
 import com.openknot.auth.util.RefreshTokenCookieWriter
 import jakarta.validation.Valid
@@ -36,6 +37,15 @@ class AuthController(
                 accessToken = generatedToken.accessToken,
             )
         )
+    }
+
+    @PostMapping("/register")
+    suspend fun register(
+        @RequestBody @Valid request: RegisterRequest,
+        response: ServerHttpResponse,
+    ): ResponseEntity<Unit> {
+        authService.register(request)
+        return ResponseEntity.status(201).build()
     }
 
     @PostMapping("/refresh")
