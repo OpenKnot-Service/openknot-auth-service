@@ -23,7 +23,13 @@ enum class ErrorCode(
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER.002"),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "USER.003"),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER.001"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
 //    UNSUPPORTED_AUTH_PROVIDER(HttpStatus.BAD_REQUEST, "USER.003"),
+
+    // GitHub OAuth Error
+    GITHUB_TOKEN_EXCHANGE_FAILED(HttpStatus.BAD_REQUEST, "GitHub 인증 코드로 액세스 토큰을 받아오는데 실패했습니다."),
+    GITHUB_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GitHub API 호출 중 오류가 발생했습니다."),
+    GITHUB_STATE_MISMATCH(HttpStatus.BAD_REQUEST, "GitHub OAuth state 값이 일치하지 않습니다."),
 
     // System Error
     INVALID_ERROR_CODE(HttpStatus.BAD_REQUEST, "SYSTEM.001"),

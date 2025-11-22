@@ -48,6 +48,9 @@ dependencies {
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
+    // oauth
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

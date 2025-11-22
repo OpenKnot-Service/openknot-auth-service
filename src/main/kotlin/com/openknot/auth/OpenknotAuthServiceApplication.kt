@@ -1,11 +1,17 @@
 package com.openknot.auth
 
+import com.openknot.auth.config.OAuthProperties
 import com.openknot.auth.config.TokenProperties
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication
 
-@EnableConfigurationProperties(TokenProperties::class)
+@EnableConfigurationProperties(
+    value = [
+        TokenProperties::class,
+        OAuthProperties::class,
+    ]
+)
 @SpringBootApplication
 class OpenknotAuthServiceApplication
 

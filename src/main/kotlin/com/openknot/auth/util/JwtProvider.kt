@@ -2,6 +2,8 @@ package com.openknot.auth.util
 
 import com.openknot.auth.config.TokenProperties
 import com.openknot.auth.dto.Token
+import com.openknot.auth.exception.BusinessException
+import com.openknot.auth.exception.ErrorCode
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
@@ -36,6 +38,21 @@ class JwtProvider(
         val userId = claims.subject
 
         return userId
+    }
+
+    fun extractUserIdFromHeader(authorizationHeader: String?): UUID {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw BusinessException(ErrorCode.UNAUTHORIZED)
+        }
+
+        val token = authorizationHeader.substring(7)
+        val userId = getAuthentication(token) ?: throw BusinessException(ErrorCode.TOKEN_INVALID)
+
+        return try {
+            UUID.fromString(userId)
+        } catch (e: IllegalArgumentException) {
+            throw BusinessException(ErrorCode.TOKEN_INVALID)
+        }
     }
 
     private fun createAccessToken(userId: UUID, role: String, now: Date): String {
