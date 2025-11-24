@@ -48,8 +48,9 @@ class GithubOAuthService(
             .fromHttpUrl("https://github.com/login/oauth/authorize")
             .queryParam("client_id", oAuthProperties.clientId)
             .queryParam("redirect_uri", oAuthProperties.redirectUri)
-            .queryParam("scope", normalizedScope)  // UriComponentsBuilder가 자동으로 URL 인코딩 (%20)
+            .queryParam("scope", normalizedScope)  // scope=read%3Auser%20admin%3Aorg 형식으로 인코딩
             .queryParam("state", state)
+            .encode()  // URI 인코딩 수행
             .build()
             .toUriString()
     }
