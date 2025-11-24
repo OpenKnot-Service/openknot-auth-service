@@ -26,15 +26,12 @@ class OAuthController(
     @GetMapping("/github")
     fun githubLogin(
         @RequestParam("token") token: String,
-        exchange: ServerWebExchange,
-    ): Mono<Void> {
+    ): Mono<Map<String, String>> {
         val userId = jwtProvider.extractUserId(token)
         val githubAuthUrl = githubOAuthService.processGithubLogin(userId)
 
-        return exchange.response.apply {
-            statusCode = HttpStatus.FOUND
-            headers.location = URI.create(githubAuthUrl)
-        }.setComplete()
+        // JSON 응답으로 URL 반환 (fetch가 리다이렉트를 따라가지 않도록)
+        return Mono.just(mapOf("url" to githubAuthUrl))
     }
 
     @GetMapping("/github/callback")
