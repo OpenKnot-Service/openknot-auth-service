@@ -55,6 +55,66 @@ object GithubOAuthCallbackPage {
                   margin-bottom: 18px;
                   border: 1px solid rgba(148,163,184,0.3);
               }
+              .icon-wrapper {
+                  width: 80px;
+                  height: 80px;
+                  margin: 0 auto 20px;
+                  position: relative;
+              }
+              .icon-circle {
+                  width: 80px;
+                  height: 80px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+              }
+              .icon-circle.success-bg {
+                  background: rgba(16, 185, 129, 0.15);
+                  border: 2px solid var(--success);
+              }
+              .icon-circle.error-bg {
+                  background: rgba(239, 68, 68, 0.15);
+                  border: 2px solid var(--error);
+              }
+              .checkmark {
+                  width: 35px;
+                  height: 35px;
+                  stroke: var(--success);
+                  stroke-width: 3;
+                  stroke-linecap: round;
+                  stroke-linejoin: round;
+                  fill: none;
+                  stroke-dasharray: 50;
+                  stroke-dashoffset: 50;
+                  animation: drawCheck 0.6s 0.3s ease-out forwards;
+              }
+              .cross {
+                  width: 35px;
+                  height: 35px;
+                  stroke: var(--error);
+                  stroke-width: 3;
+                  stroke-linecap: round;
+                  stroke-dasharray: 50;
+                  stroke-dashoffset: 50;
+                  animation: drawCross 0.6s 0.3s ease-out forwards, shake 0.5s 0.9s;
+              }
+              @keyframes scaleIn {
+                  0% { transform: scale(0); opacity: 0; }
+                  100% { transform: scale(1); opacity: 1; }
+              }
+              @keyframes drawCheck {
+                  to { stroke-dashoffset: 0; }
+              }
+              @keyframes drawCross {
+                  to { stroke-dashoffset: 0; }
+              }
+              @keyframes shake {
+                  0%, 100% { transform: translateX(0); }
+                  25% { transform: translateX(-5px); }
+                  75% { transform: translateX(5px); }
+              }
               .title { margin: 4px 0 10px; font-size: 24px; font-weight: 800; }
               .message { margin: 0 0 10px; font-size: 16px; color: var(--muted); }
               .status { font-size: 14px; color: var(--muted); }
@@ -75,11 +135,18 @@ object GithubOAuthCallbackPage {
               <div class="card">
                   <div class="glow"></div>
                   <div class="badge">GitHub OAuth</div>
-                  <div class="title success">✓ GitHub 연동 완료</div>
+                  <div class="icon-wrapper">
+                      <div class="icon-circle success-bg">
+                          <svg class="checkmark" viewBox="0 0 52 52">
+                              <path d="M14 27l8 8 16-16"/>
+                          </svg>
+                      </div>
+                  </div>
+                  <div class="title success">GitHub 연동 완료</div>
                   <p class="message">$message</p>
                   <p class="status">잠시 후 창이 자동으로 닫힙니다...</p>
               </div>
-              <script>setTimeout(() => window.close(), 1500);</script>
+              <script>setTimeout(() => window.close(), 2000);</script>
           </body>
           </html>
       """.trimIndent()
@@ -96,11 +163,18 @@ object GithubOAuthCallbackPage {
               <div class="card">
                   <div class="glow"></div>
                   <div class="badge">GitHub OAuth</div>
-                  <div class="title error">✗ GitHub 연동 실패</div>
+                  <div class="icon-wrapper">
+                      <div class="icon-circle error-bg">
+                          <svg class="cross" viewBox="0 0 52 52">
+                              <path d="M16 16l20 20M36 16l-20 20"/>
+                          </svg>
+                      </div>
+                  </div>
+                  <div class="title error">GitHub 연동 실패</div>
                   <p class="message">$message</p>
                   <p class="status">잠시 후 창이 자동으로 닫힙니다...</p>
               </div>
-              <script>setTimeout(() => window.close(), 2000);</script>
+              <script>setTimeout(() => window.close(), 5000);</script>
           </body>
           </html>
       """.trimIndent()
