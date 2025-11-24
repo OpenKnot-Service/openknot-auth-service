@@ -37,11 +37,18 @@ class GithubOAuthService(
     }
 
     fun getAuthorizationUrl(state: String): String {
+        // GitHub OAuth scope는 공백으로 구분되어야 함
+        // 설정 파일의 쉼표와 띄어쓰기를 공백 하나로 정규화 (예: "read:user, admin:org" -> "read:user admin:org")
+        val normalizedScope = oAuthProperties.scope
+            .replace(",", "")  // 쉼표 제거
+            .replace(Regex("\\s+"), " ")  // 여러 개의 공백을 하나로
+            .trim()
+
         return UriComponentsBuilder
             .fromHttpUrl("https://github.com/login/oauth/authorize")
             .queryParam("client_id", oAuthProperties.clientId)
             .queryParam("redirect_uri", oAuthProperties.redirectUri)
-            .queryParam("scope", oAuthProperties.scope)
+            .queryParam("scope", normalizedScope)  // UriComponentsBuilder가 자동으로 URL 인코딩 (%20)
             .queryParam("state", state)
             .build()
             .toUriString()
