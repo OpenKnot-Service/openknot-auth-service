@@ -25,9 +25,9 @@ class OAuthController(
 
     @GetMapping("/github")
     fun githubLogin(
-        @RequestParam("token") token: String,
+        @RequestHeader("Authorization") authorization: String,
     ): Mono<Map<String, String>> {
-        val userId = jwtProvider.extractUserId(token)
+        val userId = jwtProvider.extractUserIdFromHeader(authorization)
         val githubAuthUrl = githubOAuthService.processGithubLogin(userId)
 
         // JSON 응답으로 URL 반환 (fetch가 리다이렉트를 따라가지 않도록)
