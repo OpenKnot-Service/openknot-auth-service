@@ -34,6 +34,8 @@ class OAuthController(
         return exchange.response.apply {
             statusCode = HttpStatus.FOUND
             headers.location = URI.create(githubAuthUrl)
+            // CORS: Location 헤더를 프론트엔드에서 읽을 수 있도록 명시적으로 노출
+            headers.accessControlExposeHeaders = listOf("Location")
         }.setComplete()
     }
 
