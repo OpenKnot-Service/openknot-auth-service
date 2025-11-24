@@ -153,6 +153,10 @@ class GithubOAuthService(
                 githubUsername = githubUser.login,
                 githubId = githubUser.id,
             )
+        } catch (e: com.openknot.auth.exception.UserServiceException) {
+            // User Service 에러를 그대로 전파 (OAuthController에서 처리)
+            logger.error(e) { "User Service error during GitHub OAuth callback: ${e.errorResponse.message}" }
+            throw e
         } catch (e: BusinessException) {
             logger.error(e) { "GitHub OAuth callback failed: ${e.message}" }
             throw e

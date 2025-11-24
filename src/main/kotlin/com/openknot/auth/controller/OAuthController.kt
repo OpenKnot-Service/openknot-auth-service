@@ -1,6 +1,7 @@
 package com.openknot.auth.controller
 
 import com.openknot.auth.exception.BusinessException
+import com.openknot.auth.exception.UserServiceException
 import com.openknot.auth.service.GithubOAuthService
 import com.openknot.auth.util.JwtProvider
 import com.openknot.auth.view.GithubOAuthCallbackPage
@@ -39,6 +40,11 @@ class OAuthController(
         return try {
             val response = githubOAuthService.processGithubCallback(code, state)
             ResponseEntity.ok(GithubOAuthCallbackPage.success(response.message))
+        } catch (e: UserServiceException) {
+            // User Service에서 반환한 에러 메시지를 그대로 사용
+            logger.error(e) { "User Service error during GitHub OAuth callback: ${e.errorResponse.message}" }
+            ResponseEntity.status(e.statusCode)
+                .body(GithubOAuthCallbackPage.error(e.errorResponse.message ?: "사용자 서비스 오류가 발생했습니다."))
         } catch (e: BusinessException) {
             logger.error(e) { "GitHub OAuth callback failed: ${e.message}" }
             ResponseEntity.status(e.errorCode.status)

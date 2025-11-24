@@ -30,6 +30,7 @@ enum class ErrorCode(
     GITHUB_TOKEN_EXCHANGE_FAILED(HttpStatus.BAD_REQUEST, "GitHub 인증 코드로 액세스 토큰을 받아오는데 실패했습니다."),
     GITHUB_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GitHub API 호출 중 오류가 발생했습니다."),
     GITHUB_STATE_MISMATCH(HttpStatus.BAD_REQUEST, "GitHub OAuth state 값이 일치하지 않습니다."),
+    USER_SERVICE_ERROR(HttpStatus.FORBIDDEN, "사용자 서비스 오류가 발생했습니다."),
 
     // System Error
     INVALID_ERROR_CODE(HttpStatus.BAD_REQUEST, "SYSTEM.001"),
