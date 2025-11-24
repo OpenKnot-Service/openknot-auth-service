@@ -25,17 +25,15 @@ class OAuthController(
 
     @GetMapping("/github")
     fun githubLogin(
-        @RequestHeader("Authorization") authorization: String,
+        @RequestParam("token") token: String,
         exchange: ServerWebExchange,
     ): Mono<Void> {
-        val userId = jwtProvider.extractUserIdFromHeader(authorization)
+        val userId = jwtProvider.extractUserId(token)
         val githubAuthUrl = githubOAuthService.processGithubLogin(userId)
 
         return exchange.response.apply {
             statusCode = HttpStatus.FOUND
             headers.location = URI.create(githubAuthUrl)
-            // CORS: Location 헤더를 프론트엔드에서 읽을 수 있도록 명시적으로 노출
-            headers.accessControlExposeHeaders = listOf("Location")
         }.setComplete()
     }
 
