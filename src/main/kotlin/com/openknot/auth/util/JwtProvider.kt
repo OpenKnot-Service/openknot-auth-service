@@ -46,6 +46,10 @@ class JwtProvider(
         }
 
         val token = authorizationHeader.substring(7)
+        return extractUserId(token)
+    }
+
+    fun extractUserId(token: String): UUID {
         val userId = getAuthentication(token) ?: throw BusinessException(ErrorCode.TOKEN_INVALID)
 
         return try {
